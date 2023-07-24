@@ -30,7 +30,6 @@ class Calculadora(GridLayout):
         :param kwargs:
         """
         super().__init__()
-        pass
 
     @staticmethod
     def confirmacao(*args, **kwargs):
@@ -57,40 +56,35 @@ class Calculadora(GridLayout):
     @staticmethod
     def ler_historico(*args):
         arquivo = open('historico.txt', 'r')
-        leitura = arquivo.read()
-        return leitura
+        return arquivo.read()
 
     def memoria(self):
-        arquivo = open('historico.txt', 'r')
-        entrada = arquivo.readlines()
-        saida = entrada[-1::]
-        saida = saida[::-2]
-        arquivo.close()
+        with open('historico.txt', 'r') as arquivo:
+            entrada = arquivo.readlines()
+            saida = entrada[-1::]
+            saida = saida[::-2]
         self.display.text = ''.join(saida)
 
     def gravar_historico(self, entrada):
-        arquivo = open('historico.txt', 'w')
-        arquivo.write(entrada)
-        arquivo.close()
+        with open('historico.txt', 'w') as arquivo:
+            arquivo.write(entrada)
         self.display.text = ''
 
     def limpar_entrada(self, entrada):
         if entrada:
             saida = entrada
-            cont = 0
-            for let in entrada:
-                cont += 1
+            for cont, let in enumerate(entrada, start=1):
                 if let == '=':
                     saida = entrada[cont:]
             self.display.text = saida
 
     @staticmethod
     def varredura(palavra):
-        saida = []
-        for letra in palavra:
-            if letra not in ['0', '1', '2', '3', '4',
-                             '5', '6', '7', '8', '9', '.']:
-                saida.append(letra)
+        saida = [
+            letra
+            for letra in palavra
+            if letra not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.']
+        ]
         return "".join(saida)
 
     def atualiza(self, entrada):
@@ -111,10 +105,8 @@ class Calculadora(GridLayout):
 
     def apaga_digito(self, palavra):
         if palavra:
-            newArr = []
             saida = ''
-            for i in range(0, len(palavra) - 1):
-                newArr.append(palavra[i])
+            newArr = [palavra[i] for i in range(0, len(palavra) - 1)]
             saida = "".join(newArr)
             self.display.text = saida
 
@@ -123,57 +115,60 @@ class Calculadora(GridLayout):
             try:
                 base, percentual = calculation.split("x")
                 valor = float(base) * float(percentual) / 100
-                self.display.text += '%=' + str(valor)
+                self.display.text += f'%={str(valor)}'
             except Exception:
                 self.display.text = "Error"
 
     @staticmethod
     def decimal_bin(num):
-        if num:
-            try:
-                num = int(num)
-                soma = 0
-                pot = 0
-                while num >= 1:
-                    soma = num % 2 * 10 ** pot + soma
-                    num = int(num / 2)
-                    pot = pot + 1
-                return str(soma)
-            except ValueError:
-                return "Error"
+        if not num:
+            return
+        try:
+            num = int(num)
+            soma = 0
+            pot = 0
+            while num >= 1:
+                soma = num % 2 * 10 ** pot + soma
+                num //= 2
+                pot = pot + 1
+            return str(soma)
+        except ValueError:
+            return "Error"
 
     @staticmethod
     def bin_decimal(num):
-        if num:
-            try:
-                num = int(num)
-                soma = 0
-                pot = 0
-                while num != 0:
-                    soma = num % 10 * 2 ** pot + soma
-                    num = int(num / 10)
-                    pot = pot + 1
-                return str(soma)
-            except ValueError:
-                return "Error"
+        if not num:
+            return
+        try:
+            num = int(num)
+            soma = 0
+            pot = 0
+            while num != 0:
+                soma = num % 10 * 2 ** pot + soma
+                num //= 10
+                pot = pot + 1
+            return str(soma)
+        except ValueError:
+            return "Error"
 
     def soma_bin(self, entrada):
-        if entrada:
-            oper = self.varredura(entrada)
-            if oper == '+':
-                try:
-                    num1, num2 = entrada.split('+')
-                    soma = int(self.bin_decimal(num1)) + int(self.bin_decimal(num2))
-                    self.display.text += '=' + self.decimal_bin(soma)
-                except ValueError:
-                    self.display.text = "Error"
-            elif oper == '-':
-                try:
-                    num1, num2 = entrada.split('-')
-                    soma = int(self.bin_decimal(num1)) - int(self.bin_decimal(num2))
-                    self.display.text += '=' + self.decimal_bin(soma)
-                except Exception:
-                    self.display.text = "Error"
+        if not entrada:
+            return
+        oper = self.varredura(entrada)
+        if oper == '+':
+            try:
+                num1, num2 = entrada.split('+')
+                soma = int(self.bin_decimal(num1)) + int(self.bin_decimal(num2))
+                self.display.text += f'={self.decimal_bin(soma)}'
+            except ValueError:
+                self.display.text = "Error"
+        elif oper == '-':
+            try:
+                num1, num2 = entrada.split('-')
+                soma = int(self.bin_decimal(num1)) - int(self.bin_decimal(num2))
+                self.display.text += f'={self.decimal_bin(soma)}'
+            except Exception:
+                self.display.text = "Error"
 
     def fake_function(self, entrada):
         return str(self.inteirizar(float(eval(entrada))))
@@ -182,29 +177,29 @@ class Calculadora(GridLayout):
         oper = self.varredura(entrada)
         verifica = oper
         if verifica == "":
-            output = entrada
+            return entrada
         elif verifica == '!':
             convoca = self.valida_split(entrada.split(oper))
-            output = self.fatorial(convoca)
+            return self.fatorial(convoca)
         elif len(oper) > 1:
-            output = self.fake_function(entrada)
+            return self.fake_function(entrada)
         else:
             num1, num2 = entrada.split(oper)
-            output = self.calcula(num1, oper, num2)
-        return output
+            return self.calcula(num1, oper, num2)
 
     def fibonacci(self, num):
-        if num:
-            try:
-                num = int(num)
-                resultado = [0]
-                aux1, base = 0, 1
-                while base < num:
-                    resultado.append(base)
-                    aux1, base = base, aux1 + base
-                self.display.text += '=' + str(resultado)
-            except Exception:
-                self.display.text = "Error"
+        if not num:
+            return
+        try:
+            num = int(num)
+            resultado = [0]
+            aux1, base = 0, 1
+            while base < num:
+                resultado.append(base)
+                aux1, base = base, aux1 + base
+            self.display.text += f'={resultado}'
+        except Exception:
+            self.display.text = "Error"
 
     def fatorial(self, num):
         if num:
@@ -212,7 +207,7 @@ class Calculadora(GridLayout):
             try:
                 if num < 0:
                     return 'Digite número maior ou igual a zero'
-                elif num in [0, 1]:
+                elif num in {0, 1}:
                     return 1
                 else:
                     return num * self.fatorial(num - 1)
@@ -222,14 +217,14 @@ class Calculadora(GridLayout):
     def sqrt_2(self, numero):
         if numero:
             try:
-                self.display.text += '=' + str(self.inteirizar(float(numero) ** (1 / 2)))
+                self.display.text += f'={str(self.inteirizar(float(numero)**(1 / 2)))}'
             except Exception:
                 self.display.text = "Error"
 
     def sqrt_3(self, numero):
         if numero:
             try:
-                self.display.text += '=' + str(self.inteirizar(float(numero) ** (1 / 3)))
+                self.display.text += f'={str(self.inteirizar(float(numero)**(1 / 3)))}'
             except Exception:
                 self.display.text = "Error"
 
@@ -237,14 +232,14 @@ class Calculadora(GridLayout):
         if altura:
             try:
                 altura = float(altura)
-                self.display.text += '=' + str(round((72.7 * altura) - 58, 2))
+                self.display.text += f'={str(round(72.7 * altura - 58, 2))}'
             except Exception:
                 self.display.text = "Error"
 
     def calculate(self, calculation):
         if calculation:
             try:
-                self.display.text += '=' + str(self.aritmetica(calculation))
+                self.display.text += f'={str(self.aritmetica(calculation))}'
             except Exception:
                 self.display.text = "Error"
 
@@ -268,7 +263,7 @@ class Calculadora(GridLayout):
             numero2 = float(numero2)
             if numero1 < numero2:
                 numero1, numero2 = numero2, numero1
-            saida = round(float(numero1) / (float(numero2) ** 2), 2)
+            saida = round(numero1 / numero2**2, 2)
         else:
             saida = "ERROR"
         return self.inteirizar(saida)
